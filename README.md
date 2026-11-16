@@ -44,7 +44,9 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-The APK is a debug build: fine for sideloading on your own phones. The Play Store needs a signed release build (Android Studio → *Build → Generate Signed App Bundle*).
+**Updating:** a newer APK installs over the old one and keeps your settings. Every build is signed with the same test key (`android/app/debug.keystore`) and gets a higher version number. *(APKs from builds #1 and #2 were signed with throwaway keys, so uninstall those once before installing a newer one.)*
+
+The APK is a test (debug) build: fine for sideloading on your own phones. The Play Store needs a release build signed with your own private key (Android Studio → *Build → Generate Signed App Bundle*).
 
 ### iPhone
 

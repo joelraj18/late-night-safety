@@ -1,14 +1,29 @@
 apply plugin: 'com.android.application'
 
+// Each GitHub Actions build gets a higher version number, so a newer APK
+// installs as an update over the older one.
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
 android {
     namespace = "com.latenightsafety.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        debug {
+            // One fixed key for test builds (instead of a new random key on
+            // every build machine), so updates install over the previous APK.
+            // Test builds only: a Play Store release needs your own private key.
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
     defaultConfig {
         applicationId "com.latenightsafety.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
