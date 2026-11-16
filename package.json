@@ -1,0 +1,24 @@
+{
+  "name": "late-night-safety",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Drowsiness alarm for late-night drivers: camera-based eye-closure detection that runs entirely on the device. Web app (PWA) + Android app.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test \"tests/unit/*.test.mjs\"",
+    "test:e2e": "node tests/e2e/run.mjs",
+    "build:web": "node scripts/build-web.mjs",
+    "android:sync": "node scripts/build-web.mjs && cap sync android",
+    "android:open": "cap open android",
+    "vendor": "bash scripts/vendor-mediapipe.sh"
+  },
+  "devDependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/cli": "8.6.0",
+    "@capacitor/core": "8.6.0"
+  }
+}

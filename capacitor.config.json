@@ -1,0 +1,9 @@
+{
+  "appId": "com.latenightsafety.app",
+  "appName": "Late Night Safety",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false
+  }
+}

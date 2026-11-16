@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en" data-phase="idle" data-level="active" data-light="off" data-alarm="off">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' data: blob: mediastream:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'"
+    />
+    <title>Late Night Safety</title>
+    <meta name="description" content="Drowsiness alarm for late-night drivers: watches your eyes with the camera and buzzes loudly if they close." />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0d12" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Night Safety" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="css/app.css" />
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h2l2-2h6l2 2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="12" cy="12.5" r="3.5" /></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></symbol>
+      <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" /></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></symbol>
+      <symbol id="i-eye-closed" viewBox="0 0 24 24"><path d="M2 10s3.5 6 10 6 10-6 10-6" /><path d="M5 13.5 3.5 16M9 15.5 8.5 18.5M15 15.5l.5 3M19 13.5l1.5 2.5" /></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17h.01" /></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 7" /></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" /></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" /></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></symbol>
+      <symbol id="i-offline" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01" /></symbol>
+    </svg>
+
+    <header class="topbar">
+      <div class="brand">
+        <img src="icons/icon.svg" alt="" width="28" height="28" />
+        <span>Late Night Safety</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="offline-chip" class="chip" data-state="checking" title="Offline status">
+          <svg class="icon"><use href="#i-offline" /></svg><span class="chip-text">Checking…</span>
+        </span>
+        <button id="update-btn" class="chip chip-button" type="button" hidden>Update ready</button>
+        <button id="install-btn" class="chip chip-button" type="button" hidden>
+          <svg class="icon"><use href="#i-download" /></svg><span>Install app</span>
+        </button>
+        <button id="settings-btn" class="icon-button" type="button" aria-label="Settings">
+          <svg class="icon"><use href="#i-settings" /></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Home -->
+      <section id="home" class="screen home" aria-labelledby="home-title">
+        <div class="hero">
+          <h1 id="home-title">Stay awake on the road</h1>
+          <p class="lede">
+            Mount your phone where its camera can see your face. If your eyes close for
+            <strong id="home-closed">1 second</strong>, a loud alarm buzzes for <strong id="home-alarm">3 seconds</strong> and keeps going until
+            they open.
+          </p>
+          <button id="start-btn" class="start-button" type="button">
+            <svg class="icon"><use href="#i-eye" /></svg>
+            <span class="start-label">Start</span>
+          </button>
+          <p class="hero-note"><svg class="icon"><use href="#i-camera" /></svg> Camera video never leaves this device</p>
+          <p id="platform-hint" class="platform-hint" hidden></p>
+        </div>
+
+        <div class="levels" role="list">
+          <article class="level-card" data-level="active" role="listitem">
+            <span class="level-dot"></span>
+            <h2>Active</h2>
+            <p>Normal blinking is ignored. Eyes open, you're good.</p>
+          </article>
+          <article class="level-card" data-level="drowsy" role="listitem">
+            <span class="level-dot"></span>
+            <h2>Drowsy</h2>
+            <p>Heavy eyelids, long blinks or repeated yawns: a soft warning chime.</p>
+          </article>
+          <article class="level-card" data-level="sleeping" role="listitem">
+            <span class="level-dot"></span>
+            <h2>Sleeping</h2>
+            <p>Eyes closed too long: loud 3-second buzz, vibration and a flashing screen.</p>
+          </article>
+          <article class="level-card" data-level="light" role="listitem">
+            <svg class="icon level-icon"><use href="#i-moon" /></svg>
+            <h2>Night light</h2>
+            <p>Too dark to see your face? The screen turns white to light it up.</p>
+          </article>
+        </div>
+
+        <div class="tips">
+          <h2>Before you drive</h2>
+          <ol>
+            <li>Mount the phone on the dashboard, front camera facing you, about an arm's length away.</li>
+            <li>Turn the media volume up. On iPhone, check the Silent switch too.</li>
+            <li>Plug in a charger. The camera and a bright screen use a lot of battery.</li>
+            <li>Keep this app on screen. On Android you can split the screen with your maps app.</li>
+          </ol>
+          <p class="disclaimer">
+            <svg class="icon"><use href="#i-alert" /></svg>
+            <span>This is a safety aid, not a cure for tiredness. If you feel sleepy, stop somewhere safe and rest: a 20-minute nap helps.</span>
+          </p>
+        </div>
+        <p class="credits">Face tracking runs on your device with MediaPipe (Apache-2.0).</p>
+      </section>
+
+      <!-- Monitoring -->
+      <section id="monitor" class="screen monitor" aria-label="Monitoring" hidden>
+        <div class="stage" id="stage">
+          <video id="video" playsinline muted autoplay></video>
+          <canvas id="overlay" aria-hidden="true"></canvas>
+          <div class="preview-cover" aria-hidden="true">
+            <svg class="icon"><use href="#i-eye" /></svg>
+          </div>
+          <div id="calibration" class="calibration" hidden>
+            <div class="calibration-ring"><span id="calibration-pct">0%</span></div>
+            <p id="calibration-text">Look ahead with your eyes open</p>
+          </div>
+          <div id="loading" class="stage-message" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <p id="loading-text">Starting camera…</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div id="status" class="status" data-level="active">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div>
+              <div id="status-label" class="status-label">Starting…</div>
+              <div id="status-sub" class="status-sub">Getting ready</div>
+            </div>
+          </div>
+
+          <div class="meter-block">
+            <div class="meter-head"><span>Eye closure</span><span id="meter-value">0%</span></div>
+            <div class="meter" id="meter">
+              <div class="meter-fill" id="meter-fill"></div>
+              <div class="meter-mark" id="meter-mark" title="Closed threshold"></div>
+            </div>
+          </div>
+
+          <dl class="stats">
+            <div><dt>Time</dt><dd id="stat-time">0:00</dd></div>
+            <div><dt>Alarms</dt><dd id="stat-alarms">0</dd></div>
+            <div><dt>Drowsy</dt><dd id="stat-drowsy">0</dd></div>
+            <div><dt>Yawns</dt><dd id="stat-yawns">0</dd></div>
+          </dl>
+
+          <ul class="indicators" aria-label="Safety checks">
+            <li id="ind-screen" data-ok="unknown"><svg class="icon"><use href="#i-sun" /></svg><span>Screen on</span></li>
+            <li id="ind-sound" data-ok="unknown"><svg class="icon"><use href="#i-volume" /></svg><span>Sound</span></li>
+            <li id="ind-offline" data-ok="unknown"><svg class="icon"><use href="#i-offline" /></svg><span>Offline ready</span></li>
+          </ul>
+
+          <div id="break-banner" class="banner banner-danger" role="alert" hidden></div>
+          <div id="fix-banner" class="banner banner-warning" hidden>
+            <span id="fix-text"></span>
+            <button id="fix-btn" class="btn btn-small" type="button">Fix</button>
+          </div>
+
+          <div class="controls">
+            <button id="stop-btn" class="btn btn-danger" type="button"><svg class="icon"><use href="#i-stop" /></svg>Stop</button>
+            <button id="light-btn" class="btn" type="button"><svg class="icon"><use href="#i-moon" /></svg><span id="light-btn-text">Light: Auto</span></button>
+            <button id="recal-btn" class="btn" type="button"><svg class="icon"><use href="#i-refresh" /></svg>Recalibrate</button>
+            <button id="fullscreen-btn" class="btn" type="button" hidden><svg class="icon"><use href="#i-expand" /></svg>Full screen</button>
+          </div>
+          <pre id="details" class="details" hidden></pre>
+        </div>
+      </section>
+    </main>
+
+    <!-- White screen that lights up the driver's face at night -->
+    <div id="nightlight" class="nightlight" hidden>
+      <div class="nightlight-bar">
+        <span class="nl-dot" aria-hidden="true"></span>
+        <span id="nl-text" class="nl-text">Night light on · watching your eyes</span>
+        <button id="nl-off" class="nl-button" type="button">Light off</button>
+        <button id="nl-stop" class="nl-button" type="button">Stop</button>
+      </div>
+    </div>
+
+    <!-- Alarm -->
+    <div id="alarm" class="alarm" role="alertdialog" aria-labelledby="alarm-title" aria-describedby="alarm-sub" hidden>
+      <svg class="icon alarm-icon"><use href="#i-eye-closed" /></svg>
+      <div id="alarm-title" class="alarm-title">WAKE UP!</div>
+      <div id="alarm-sub" class="alarm-sub">Your eyes were closed</div>
+      <button id="alarm-dismiss" class="alarm-dismiss" type="button">I'm awake</button>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div id="sr-live" class="sr-only" aria-live="assertive"></div>
+
+    <!-- Permissions checklist shown when monitoring is switched on -->
+    <dialog id="perm-dialog" class="sheet" aria-labelledby="perm-title">
+      <h2 id="perm-title">Before you start</h2>
+      <p class="sheet-lede">Late Night Safety needs these to keep you safe:</p>
+      <ul class="perm-list">
+        <li data-perm="camera" data-state="needed">
+          <svg class="icon perm-icon"><use href="#i-camera" /></svg>
+          <div class="perm-text">
+            <strong>Camera</strong>
+            <span>Watches your eyes. The video is processed on this device and never uploaded.</span>
+          </div>
+          <span class="perm-state"></span>
+        </li>
+        <li data-perm="screen" data-state="needed">
+          <svg class="icon perm-icon"><use href="#i-sun" /></svg>
+          <div class="perm-text">
+            <strong>Keep screen on</strong>
+            <span>Stops the screen from turning off or locking while monitoring is on.</span>
+          </div>
+          <span class="perm-state"></span>
+        </li>
+        <li data-perm="sound" data-state="needed">
+          <svg class="icon perm-icon"><use href="#i-volume" /></svg>
+          <div class="perm-text">
+            <strong>Alarm sound &amp; vibration</strong>
+            <span id="perm-sound-text">A loud 3-second buzz if your eyes stay closed.</span>
+          </div>
+          <button id="perm-test" class="btn btn-small" type="button">Test</button>
+        </li>
+      </ul>
+      <p id="perm-error" class="sheet-error" role="alert" hidden></p>
+      <label class="check"><input id="perm-skip" type="checkbox" /> Don't show this checklist next time</label>
+      <div class="sheet-actions">
+        <button id="perm-cancel" class="btn btn-ghost" type="button">Cancel</button>
+        <button id="perm-allow" class="btn btn-primary" type="button">Allow &amp; start</button>
+      </div>
+    </dialog>
+
+    <!-- Settings -->
+    <dialog id="settings-dialog" class="sheet sheet-tall" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button id="settings-close" class="icon-button" type="button" aria-label="Close settings"><svg class="icon"><use href="#i-x" /></svg></button>
+      </div>
+      <form id="settings-form" class="settings" autocomplete="off">
+        <fieldset>
+          <legend>Alarm</legend>
+          <label class="field">
+            <span class="field-row"><span>Eyes closed for</span><output data-for="closedSeconds"></output></span>
+            <input type="range" name="closedSeconds" min="0.5" max="3" step="0.1" />
+            <small>Shorter reacts faster but may catch slow blinks.</small>
+          </label>
+          <label class="field">
+            <span class="field-row"><span>Alarm length</span><output data-for="alarmSeconds"></output></span>
+            <input type="range" name="alarmSeconds" min="1" max="10" step="1" />
+            <small>Repeats until your eyes open.</small>
+          </label>
+          <label class="field">
+            <span class="field-row"><span>Volume</span><output data-for="volume"></output></span>
+            <input type="range" name="volume" min="0.2" max="1" step="0.05" />
+          </label>
+          <label class="switch"><input type="checkbox" name="vibrate" /><span>Vibrate</span></label>
+          <label class="switch" data-platform="ios"><input type="checkbox" name="silentModeOverride" /><span>Play even when iPhone is on Silent (pauses music during alarms)</span></label>
+          <button id="test-alarm" class="btn" type="button"><svg class="icon"><use href="#i-volume" /></svg>Test alarm</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Detection</legend>
+          <div class="field">
+            <span class="field-row"><span>Sensitivity</span></span>
+            <div class="segmented" role="radiogroup" aria-label="Sensitivity">
+              <label><input type="radio" name="sensitivity" value="low" /><span>Low</span></label>
+              <label><input type="radio" name="sensitivity" value="normal" /><span>Normal</span></label>
+              <label><input type="radio" name="sensitivity" value="high" /><span>High</span></label>
+            </div>
+            <small>High also treats half-closed eyes as closed.</small>
+          </div>
+          <label class="switch"><input type="checkbox" name="drowsyWarnings" /><span>Drowsy warning chime</span></label>
+          <label class="switch"><input type="checkbox" name="yawnDetection" /><span>Count yawns</span></label>
+          <label class="field">
+            <span class="field-row"><span>Alarm if face not visible for</span></span>
+            <select name="noFaceAlertSeconds">
+              <option value="0">Off</option>
+              <option value="3">3 seconds</option>
+              <option value="5">5 seconds</option>
+              <option value="10">10 seconds</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Night light</legend>
+          <div class="field">
+            <span class="field-row"><span>White screen</span></span>
+            <div class="segmented" role="radiogroup" aria-label="Night light mode">
+              <label><input type="radio" name="nightLight" value="auto" /><span>Auto</span></label>
+              <label><input type="radio" name="nightLight" value="on" /><span>Always</span></label>
+              <label><input type="radio" name="nightLight" value="off" /><span>Off</span></label>
+            </div>
+            <small>Auto turns on when it's too dark to see your face.</small>
+          </div>
+          <label class="field">
+            <span class="field-row"><span>Light strength</span></span>
+            <select name="lightLevel">
+              <option value="1">100% white</option>
+              <option value="0.7">70%</option>
+              <option value="0.4">40%</option>
+            </select>
+          </label>
+          <label class="switch" data-platform="android-app"><input type="checkbox" name="maxBrightness" /><span>Full screen brightness while the light is on</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Camera</legend>
+          <label class="field">
+            <span class="field-row"><span>Camera</span></span>
+            <select name="cameraId"><option value="">Front camera</option></select>
+          </label>
+          <label class="switch"><input type="checkbox" name="showPreview" /><span>Show camera preview</span></label>
+          <label class="switch"><input type="checkbox" name="mirror" /><span>Mirror preview</span></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Advanced</legend>
+          <label class="switch"><input type="checkbox" name="useGPU" /><span>Use GPU (faster; turn off if tracking misbehaves)</span></label>
+          <label class="switch"><input type="checkbox" name="showDetails" /><span>Show detection numbers</span></label>
+          <label class="switch"><input type="checkbox" name="skipPermissionPopup" /><span>Skip the start checklist</span></label>
+          <button id="reset-settings" class="btn btn-ghost" type="button">Reset to defaults</button>
+        </fieldset>
+      </form>
+    </dialog>
+
+    <!-- Drive summary -->
+    <dialog id="summary-dialog" class="sheet sheet-tall" aria-labelledby="summary-title">
+      <div class="sheet-head">
+        <h2 id="summary-title">Drive summary</h2>
+        <button id="summary-close" class="icon-button" type="button" aria-label="Close summary"><svg class="icon"><use href="#i-x" /></svg></button>
+      </div>
+      <div class="kpis" id="summary-kpis"></div>
+      <p id="summary-advice" class="summary-advice"></p>
+      <div class="chart-card">
+        <div class="chart-head">
+          <h3>Eye openness</h3>
+          <ul class="legend" id="summary-legend"></ul>
+        </div>
+        <div id="summary-chart" class="chart"></div>
+        <details class="chart-table">
+          <summary>Show as table</summary>
+          <table>
+            <thead>
+              <tr><th scope="col">Minute</th><th scope="col">Eye openness</th><th scope="col">Events</th></tr>
+            </thead>
+            <tbody id="summary-table"></tbody>
+          </table>
+        </details>
+      </div>
+    </dialog>
+  </body>
+</html>
