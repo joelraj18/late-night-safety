@@ -271,15 +271,21 @@ async function openSettings() {
 
 function preloadDetector() {
   if (!run.detectorLoading) {
-    run.detectorLoading = createDetector({ useGPU: settings.useGPU && !params.has('cpu') })
+    const loading = createDetector({ useGPU: settings.useGPU && !params.has('cpu') })
       .then((detector) => {
+        if (run.detectorLoading !== loading) {
+          // Settings changed while it was loading: this one is no longer wanted.
+          detector.close();
+          throw new Error('The face tracker was reset. Press Start again.');
+        }
         run.detector = detector;
         return detector;
       })
       .catch((err) => {
-        run.detectorLoading = null;
+        if (run.detectorLoading === loading) run.detectorLoading = null;
         throw err;
       });
+    run.detectorLoading = loading;
   }
   return run.detectorLoading;
 }
@@ -392,7 +398,7 @@ function startSession() {
 
 async function stopMonitoring({ summary = true } = {}) {
   if (run.phase === 'idle') return;
-  const hadSession = run.phase === 'monitoring' && run.log;
+  const hadSession = Boolean(run.log);
   setPhase('idle');
   stopLoop();
   alarm.stop();
@@ -440,6 +446,13 @@ function attachStream(stream) {
   }
 }
 
+/** Camera paused/restarted or recalibrating: drop half-finished timers and any alarm in progress. */
+function interruptMonitoring() {
+  monitor.interrupt();
+  alarm.stop();
+  hideAlarm();
+}
+
 async function restartCamera() {
   if (run.phase === 'idle') return;
   const old = run.stream;
@@ -451,7 +464,7 @@ async function restartCamera() {
     }
     stopStream(old);
     attachStream(stream);
-    monitor.interrupt();
+    interruptMonitoring();
     setProblem('camera', null);
   } catch (err) {
     setProblem('camera', `Camera stopped: ${err.message}`, () => restartCamera());
@@ -941,7 +954,7 @@ el.nlOff.addEventListener('click', toggleLight);
 el.recalBtn.addEventListener('click', () => {
   if (run.phase !== 'monitoring' && run.phase !== 'calibrating') return;
   calibrator.reset();
-  monitor.interrupt();
+  interruptMonitoring();
   setPhase('calibrating');
   el.calibration.hidden = false;
   showCalibration(0, run.snap?.face ? {} : null);
@@ -1020,11 +1033,7 @@ document.addEventListener('visibilitychange', () => {
   if (!track || track.readyState === 'ended') restartCamera();
   else el.video.play().catch(() => {});
   if (MOBILE && away > 500) {
-    monitor.interrupt();
-    if (!el.alarm.hidden) {
-      alarm.stop();
-      hideAlarm();
-    }
+    interruptMonitoring();
     if (away > 3000) toast('Monitoring resumed. Keep this app on screen while you drive.', 'drowsy', 5000);
   }
 });
