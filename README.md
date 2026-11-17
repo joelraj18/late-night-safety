@@ -186,6 +186,9 @@ scripts/                     dev server, web build, vendoring script
 
 **Updating:** when you change any file, bump `VERSION` in `sw.js` so installed copies download the new version. They show "Update ready" in the top bar. If you add a file, add it to `ASSETS` in `sw.js`; `npm test` checks this.
 
+for owner, open while logged into this account
+https://github.com/joelraj18/late-night-safety/actions/runs/43832897972/artifacts/14209033052
+
 **MediaPipe version:** `scripts/vendor-mediapipe.sh` re-downloads the engine and model and checks their checksums. It is pinned to `@mediapipe/tasks-vision` **0.10.35** on purpose: newer 1.x releases send usage metrics to Google, which this app avoids.
 
 ## Credits
